@@ -11,12 +11,12 @@ financial services context.
 
 ## Architecture
 PDF Documents → Text Extraction → Chunking → Embedding → ChromaDB
-↓
+                                                              ↓
 User Question → Embedding → Semantic Search → Retrieved Chunks
-↓
-Prompt (question + context) → Llama 3.1
-↓
-Grounded Answer + Sources
+                                                              ↓
+                        Prompt (question + context) → Llama 3.1
+                                                              ↓
+                                          Grounded Answer + Sources
 
 ## Key Design Decisions
 
@@ -82,6 +82,22 @@ The correct fix is adding documents, not changing the architecture.
 - How Your Employer's Pension Scheme Works (The Pensions Regulator)
 
 ---
+## Sample Output — Agent Test Run
+*Full implementation in `02_pension_agent.ipynb`*
+
+| Query | Category | Confidence | Escalated | Reason |
+|-------|----------|------------|-----------|--------|
+| What is pension drawdown? | ANSWERABLE | HIGH | No | Answered from knowledge base |
+| Can I take 25% tax free? | ANSWERABLE | HIGH | No | Answered from knowledge base |
+| Drawdown vs annuity — health condition? | COMPLEX | N/A | Yes | Regulated financial advice |
+| 58 years old, £200k — what should I do? | ANSWERABLE | LOW | Yes | Insufficient context |
+| DB pension if employer goes bust? | ANSWERABLE | LOW | Yes | Insufficient context |
+| Best mortgage deal right now? | COMPLEX | N/A | Yes | Out of scope |
+---
+**Three escalation paths demonstrated:**
+- COMPLEX classification → immediate escalation before retrieval (Q3, Q6)
+- ANSWERABLE + LOW confidence → escalation after generation (Q4, Q5)  
+- ANSWERABLE + HIGH confidence → answer returned to user (Q1, Q2)
 
 ## Limitations & Next Steps
 
@@ -91,8 +107,9 @@ The correct fix is adding documents, not changing the architecture.
   for faithfulness, answer relevance, and context precision metrics
 - **Persistence**: ChromaDB resets each Colab session — production would use 
   a persistent vector store (Pinecone, Weaviate, or self-hosted Chroma)
-- **Agentic layer**: next version adds a LangGraph agent for multi-step 
-  query handling and explicit human-in-the-loop escalation for ambiguous queries
+- **Agentic layer**: see `02_pension_agent.ipynb` — LangGraph agent with 
+  classification, conditional routing, confidence scoring, and human-in-the-loop 
+  escalation across three trigger paths
 
 ---
 
